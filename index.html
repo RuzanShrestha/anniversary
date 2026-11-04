@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>For Anushka - The Gauntlet (Stage 1)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-top: #ffe5ec;
+            --bg-bottom: #fff0f3;
+            --text-dark: #3d2226;
+            --text-muted: #8a5761;
+            --accent-rose: #ffb3c1;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --shadow-soft: 0 12px 40px rgba(229, 179, 190, 0.4);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 16px;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            color: var(--text-dark);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        #petal-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1;
+        }
+
+        .glass-panel {
+            width: 100%; max-width: 420px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            box-shadow: var(--shadow-soft);
+            padding: 32px 24px;
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column;
+            animation: float-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes float-in {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        h1 { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.7rem; text-align: center; margin: 0 0 8px 0; }
+        .subtitle { text-align: center; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 20px; }
+
+        .memory-list {
+            list-style: none; padding: 0; margin: 0 0 20px 0;
+            overflow-y: auto; max-height: 50vh; padding-right: 4px;
+        }
+        .memory-list::-webkit-scrollbar { width: 4px; }
+        .memory-list::-webkit-scrollbar-thumb { background: var(--accent-rose); border-radius: 10px; }
+        
+        .memory-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 12px 16px; margin-bottom: 8px; border-radius: 16px;
+            cursor: pointer; user-select: none; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .memory-item:hover { background: rgba(255, 255, 255, 0.95); transform: translateY(-1px); }
+        .memory-item.selected {
+            background: #fff; border-color: var(--accent-rose);
+            box-shadow: 0 8px 20px rgba(229, 179, 190, 0.6); transform: scale(1.03); z-index: 2;
+        }
+        .memory-text { font-size: 0.85rem; font-weight: 500; }
+        .swap-indicator {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); background: rgba(229, 179, 190, 0.3);
+            padding: 4px 8px; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;
+        }
+        .memory-item.selected .swap-indicator { background: var(--accent-rose); color: #fff; }
+
+        .btn {
+            position: relative; width: 100%;
+            background: linear-gradient(135deg, var(--text-dark), #5a3238);
+            color: #fff; border: none; font-family: 'Inter', sans-serif;
+            font-weight: 600; font-size: 1rem; padding: 16px; border-radius: 16px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(61, 34, 38, 0.2);
+            overflow: hidden; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg); transition: all 0.6s ease; z-index: 1;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(61, 34, 38, 0.4); }
+        .btn:hover::before { left: 150%; }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(61, 34, 38, 0.2); }
+
+        .status-msg {
+            text-align: center; font-size: 0.85rem; font-weight: 500; margin-top: 12px;
+            padding: 10px; border-radius: 12px; opacity: 0; transition: opacity 0.3s;
+        }
+        .status-msg.show { opacity: 1; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+    <canvas id="petal-canvas"></canvas>
+
+    <div class="glass-panel">
+        <h1>I. Our Story</h1>
+        <p class="subtitle">Drag and tap to match our favorite memories from the earliest (top) to the most recent (bottom).</p>
+        
+        <ul id="memory-list" class="memory-list"></ul>
+        
+        <button id="verify-btn" class="btn">Unlock Stage 2 ➔</button>
+        <div id="status-msg" class="status-msg"></div>
+    </div>
+
+    <script>
+        const correctOrder = [
+            "Manly together",
+            "Took my favourite picture of us together",
+            "Got together",
+            "Aquarium Date",
+            "Your birthday",
+            "Dancing in the Moonlight",
+            "New Years",
+            "Dinner Date",
+            "Cronulla Date",
+            "Valentines",
+            "Last Time We made Pizza tg",
+            "visited you first time",
+            "us against the world",
+            "worlds tallest Zenga",
+            "pancakes yay",
+            "played cards tg"
+        ];
+
+        const memoryListEl = document.getElementById('memory-list');
+        let activeItem = null;
+
+        function initTimeline() {
+            let shuffled;
+            do { shuffled = [...correctOrder].sort(() => Math.random() - 0.5); } 
+            while (shuffled.every((val, i) => val === correctOrder[i]));
+
+            memoryListEl.innerHTML = '';
+            shuffled.forEach((memory) => {
+                const li = document.createElement('li');
+                li.className = "memory-item";
+                li.innerHTML = `<span class="memory-text">${memory}</span><span class="swap-indicator">Swap</span>`;
+                li.dataset.value = memory;
+                li.addEventListener('click', () => {
+                    if (!activeItem) {
+                        activeItem = li; li.classList.add('selected');
+                    } else {
+                        if (activeItem !== li) {
+                            const tempHTML = activeItem.innerHTML;
+                            const tempValue = activeItem.dataset.value;
+                            activeItem.innerHTML = li.innerHTML; activeItem.dataset.value = li.dataset.value;
+                            li.innerHTML = tempHTML; li.dataset.value = tempValue;
+                        }
+                        activeItem.classList.remove('selected'); activeItem = null;
+                    }
+                });
+                memoryListEl.appendChild(li);
+            });
+        }
+
+        document.getElementById('verify-btn').addEventListener('click', () => {
+            const currentOrder = Array.from(memoryListEl.children).map(li => li.dataset.value);
+            const isCorrect = currentOrder.every((val, index) => val === correctOrder[index]);
+            const msgEl = document.getElementById('status-msg');
+
+            if (isCorrect) {
+                msgEl.textContent = "Perfect! Moving to Stage 2...";
+                msgEl.className = "status-msg show success";
+                setTimeout(() => window.location.href = "stage2.html", 1200);
+            } else {
+                msgEl.textContent = "Not quite right. Try swapping a few!";
+                msgEl.className = "status-msg show error";
+                setTimeout(() => msgEl.classList.remove('show'), 3000);
+            }
+        });
+
+        initTimeline();
+
+        // --- GLOBAL BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('petal-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth; let height = canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+
+        const flowerSize = 32; const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = flowerSize; offscreenCanvas.height = flowerSize;
+        const oCtx = offscreenCanvas.getContext('2d'); oCtx.font = `${flowerSize - 6}px serif`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle'; oCtx.fillText('🌸', flowerSize / 2, flowerSize / 2);
+
+        const flowers = [];
+        class Flower {
+            constructor() { this.reset(); this.y = Math.random() * height; }
+            reset() { this.x = Math.random() * width; this.y = Math.random() * -height - 20; this.scale = Math.random() * 0.4 + 0.5; this.vs = Math.random() * 0.8 + 0.4; this.hs = Math.random() * 0.6 - 0.3; this.spin = Math.random() * 0.03; this.angle = Math.random() * Math.PI * 2; this.opacity = Math.random() * 0.4 + 0.3; }
+            draw() { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.globalAlpha = this.opacity; const d = flowerSize * this.scale; ctx.drawImage(offscreenCanvas, -d / 2, -d / 2, d, d); ctx.restore(); }
+            update() { this.y += this.vs; this.x += this.hs + Math.sin(this.y / 60) * 0.4; this.angle += this.spin; if (this.y > height + 20) this.reset(); }
+        }
+        for (let i = 0; i < 20; i++) flowers.push(new Flower());
+        function animate() { ctx.clearRect(0, 0, width, height); flowers.forEach(f => { f.update(); f.draw(); }); requestAnimationFrame(animate); }
+        animate();
+    </script>
+</body>
+</html>

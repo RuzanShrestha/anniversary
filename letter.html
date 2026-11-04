@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>For Anushka - Our Story</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-top: #ffe5ec;
+            --bg-bottom: #fff0f3;
+            --text-dark: #3d2226;
+            --text-muted: #8a5761;
+            --accent-rose: #ffb3c1;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.95);
+            --shadow-base: 0 15px 45px rgba(229, 179, 190, 0.5);
+            --border-color: rgba(255, 179, 193, 0.8);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            margin: 0; 
+            padding: 16px;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            color: var(--text-dark);
+            font-family: 'Caveat', cursive; /* Handwritten font applied everywhere */
+            min-height: 100vh;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #petal-canvas {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            pointer-events: none; 
+            z-index: 1;
+        }
+
+        .glass-panel {
+            width: 100%; 
+            max-width: 700px;
+            height: 90vh; /* Fixed height for page turning */
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            box-shadow: var(--shadow-base), 0 0 40px rgba(255, 179, 193, 0.3);
+            position: relative; 
+            z-index: 10;
+            display: flex; 
+            flex-direction: column;
+            animation: float-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* --- Romantic Borders & Corners --- */
+        .romantic-border {
+            position: absolute;
+            top: 16px; left: 16px; right: 16px; bottom: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: 15;
+        }
+        .romantic-border::before {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            opacity: 0.7;
+        }
+
+        .corner-flower {
+            position: absolute;
+            font-size: 24px;
+            width: 40px; height: 40px;
+            display: flex; justify-content: center; align-items: center;
+            background: var(--glass-bg);
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(229, 179, 190, 0.3);
+            z-index: 16;
+        }
+        .tl { top: -12px; left: -12px; transform: rotate(-45deg); }
+        .tr { top: -12px; right: -12px; transform: rotate(45deg); }
+        .bl { bottom: -12px; left: -12px; transform: rotate(-135deg); }
+        .br { bottom: -12px; right: -12px; transform: rotate(135deg); }
+
+        @keyframes float-in {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- Pages Container --- */
+        .pages-container {
+            flex: 1;
+            position: relative;
+            padding: 40px 32px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 20;
+        }
+
+        /* Custom scrollbar for inner text */
+        .pages-container::-webkit-scrollbar { width: 5px; }
+        .pages-container::-webkit-scrollbar-thumb { background: var(--accent-rose); border-radius: 10px; }
+
+        .page {
+            position: absolute;
+            top: 40px; left: 32px; right: 32px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            position: relative;
+            top: 0; left: 0; right: 0;
+        }
+        .page.previous {
+            transform: translateX(-30px);
+        }
+
+        /* --- Photos --- */
+        .photo-frame {
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 4/3;
+            background: #fff;
+            padding: 8px 8px 24px 8px;
+            border-radius: 4px;
+            box-shadow: 0 8px 25px rgba(138, 87, 97, 0.2);
+            margin-bottom: 24px;
+            transform: rotate(-2deg);
+            transition: transform 0.4s ease;
+        }
+        .photo-frame:nth-child(even) { transform: rotate(2deg); }
+        .photo-frame:hover { transform: scale(1.02) rotate(0deg); }
+        
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 2px;
+            background-color: var(--accent-rose); /* Placeholder color if image is missing */
+        }
+
+        /* --- Letter Text --- */
+        .letter-text {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 1.6rem;
+            color: var(--text-dark);
+            text-align: justify;
+            width: 100%;
+        }
+
+        .signature {
+            margin-top: 40px;
+            text-align: right;
+            font-size: 2.2rem;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        /* --- Navigation Controls --- */
+        .controls {
+            padding: 20px 32px 30px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--text-dark);
+            border: 1px solid var(--accent-rose);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 10px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .btn:hover:not(:disabled) {
+            background: var(--accent-rose);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 179, 193, 0.6);
+        }
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: transparent;
+        }
+
+        .page-indicator {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .glass-panel { padding: 0; }
+            .pages-container { padding: 30px 20px; }
+            .letter-text { font-size: 1.45rem; }
+            .controls { padding: 16px 20px 24px 20px; }
+            .photo-frame { padding: 6px 6px 20px 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="petal-canvas"></canvas>
+
+    <div class="glass-panel">
+        
+        <!-- Romantic Border & Floral Corners -->
+        <div class="romantic-border">
+            <div class="corner-flower tl">🌸</div>
+            <div class="corner-flower tr">💮</div>
+            <div class="corner-flower bl">🌺</div>
+            <div class="corner-flower br">🌸</div>
+        </div>
+
+        <div class="pages-container" id="pages-container">
+            
+            <!-- PAGE 1 -->
+            <div class="page active">
+                <div class="photo-frame" style="transform: rotate(-3deg);">
+                    <img src="1.png" alt="Memory 1">
+                </div>
+                <div class="letter-text">To my most favourite person,
+Happyyyy Anniversaryyyyy Anushka,
+Wow an entire year now? Yes, and many more to come. It feels like a very big accomplishment and honestly I did not even feel the time fly by. It felt very natural. I am very grateful to have started this wonderful journey with you. Just as swans , we shall glide through this world side-by-side, forever bound. May our souls be forever tangled.
+I heard this saying, my heart is so full of you that I can cannot call it mine anymore. I cannot look at anything else in this world the same now that I have seen you. Every day all I think about is you, all I want is you and all I care for is you.
+I am so grateful to have you in my life. I do not care for anything else. You have been such a wonderful girlfriend. You are the best girlfriend ever.
+You make my sad days happy, you make me smile when I am crying and you help me navigate through this labyrinth of a life. I could not have asked for a better life partner, god really gave me the perfect woman for me. You have been such a strong pillar and I am sorry that I have not been able to be the same but I look at you and you really give me motivation to be stronger myself. I will work on myself everyday and become strong and I hope I motivate you just the same.</div>
+            </div>
+
+            <!-- PAGE 2 -->
+            <div class="page">
+                <div class="photo-frame" style="transform: rotate(2deg);">
+                    <img src="2.png" alt="Memory 2">
+                </div>
+                <div class="letter-text">I feel like the gap between 11 months and the anniversary was so short right? haha time flies so quick and naturally when I am with you. But a lot of things happened in the last month, especially me coming to visit you for nearly a week? that was so fun and so worth it. I love visiting you and getting to live with you but somehow it never is enough. No matter how long it is. My favourite day was dentist date day but one of my most under rated moment was when we were talking while I had that bigreko chhang. It felt nice and cozy. and I also really liked that you told me to play guitar while you studied. it felt very natural, cozy and sweet
+One of the other favourite things about us that happened this month or the last was that we started taking so many hobbies together. It is really fun to have been able to have same hobbies while we explore eachother I am glad that we can start new hobbies and get better at it together. I love doing our one minute speeches and sketches together with you and we already have come so far. I hope the future brings more hobbies and things we can do together hehe. </div>
+            </div>
+
+            <!-- PAGE 3 -->
+            <div class="page">
+                <div class="photo-frame" style="transform: rotate(-1deg);">
+                    <img src="3.png" alt="Memory 3">
+                </div>
+                <div class="letter-text">Lets go to where and how our relationship started. On a not so random Wednesday in November 5th a year ago. I remember the day so vividly as if it was yesterday. Just as usual we would be spending our Wednesday mornings together and as we were just hugging eachother and walking through the house we got in front of your room. This was the morning after we woke up. And then you asked me why I don't ask you to be my girlfriend. My heart fluttered I was confused and nervous but then and there I made the spontaneous decision to ask you to be my girlfriend, a decision that has changed my life forever. Ofc I was different back then so I did this spontaneously but I have changed and evolved as the course of this relationship and have become way more chalant, expressive and effort driven and I would do as much as I can every chance I get. I remember you said yes smiling and I carried you to the couch and we cuddled for a while. It was such a nice day, honestly every day I got to spend with you was a lovely day. Everyday this past year I have felt my love for you grow bit by bit.
+
+We went on many dates( would love to go on more always) and had so much fun. We grew into eachother more and more every single passing day. I still remember those days where I would work overtime and finish my OT early just to be with you. I remember dancing with you, watching movies with you, doing chores with you, talking with you , feeling safe with you, being happy to come back home to you, getting you flowers, sneaking into your room and living with you. I miss living with you under the same roof. I wish I could go back but Im sure that it is better to go forwards too to when ill be living with you and it will be even better. I remember our lovely Aquarium date which was like our kind of first date.</div>
+            </div>
+
+            <!-- PAGE 4 -->
+            <div class="page">
+                <div class="photo-frame" style="transform: rotate(3deg);">
+                    <img src="4.png" alt="Memory 4">
+                </div>
+                <div class="letter-text">Writing all this is making me emotional. I really hope to see you soon my lovely wifey. I cannot wait to be with you. I wish I could live my life with you already. I miss you so much. We have gone through so much together. Almost 9 months of long distance alone but our love stands above all, stronger than ever as it grows like it has always been. It must have been so tough for you too cause  my life has not been that smooth and since we are a team I know it kind of affects you too. But I am glad to have you by my side. Honestly I have used it a lot but hamro long distance ko one of my favourite memories is when you said us against the world to me while I was crying in a train coming back at midnight. God you have been such a good girlfriend. 
+
+You are the best girlfriend ever. I love to be with you spend every moment with you. I wish I could spend every second of my life with you. You make me feel so loved and comfortable in my own skin. You are my home and you make me feel so safe. I feel the safes when I am with you and I would rather be nowhere else than with you. You are my favourite everything. favourite place, food, person, everything. I am all yours and I will devote myself to become the best boyfriend and husband I can be hehe. I love you so so so much. I love your smile, your pretty face and god you are so so so hot. but above all I really love your soul, your presence. You are so great and I really look up to you. how strong you are. How caring you are and how loving you are. How you always get your stuff done and are in control when everything is falling apart. I hope to be more like you. filled with life. so whimsical.</div>
+            </div>
+
+            <!-- PAGE 5 -->
+            <div class="page">
+                <div class="photo-frame" style="transform: rotate(-2deg);">
+                    <img src="5.png" alt="Memory 5">
+                </div>
+                <div class="letter-text">I hope to continue on this journey with you till the end of time. I hope to be yours forever. I am so excited for our future, I am sure that we will have so many adventures, fun dates and everything together. I cannot wait to be able to wake up next to you every morning, move into different places with you and experience the rest of my life with you. Every day with you is special to me and I never have and never will take a second for granted. I am so happy to have you in my life, and I am so lucky to be able to call you mine. I could write this forever and never end but for this letter I will be ending it here you can always talk to me if you want to hear more. I love you</div>
+                <div class="signature">Yours now and forever<br>Ruzan</div>
+            </div>
+
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn" id="prev-btn" disabled>← Previous</button>
+            <span class="page-indicator" id="page-indicator">I / V</span>
+            <button class="btn" id="next-btn">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        // --- PAGINATION LOGIC ---
+        const pages = document.querySelectorAll('.page');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const indicator = document.getElementById('page-indicator');
+        const container = document.getElementById('pages-container');
+        let currentPage = 0;
+
+        const romanNumerals = ["I", "II", "III", "IV", "V"];
+
+        function updatePages() {
+            pages.forEach((page, index) => {
+                page.classList.remove('active', 'previous');
+                if (index === currentPage) {
+                    page.classList.add('active');
+                } else if (index < currentPage) {
+                    page.classList.add('previous');
+                }
+            });
+
+            // Update buttons
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage === pages.length - 1;
+            
+            // Update indicator
+            indicator.textContent = `${romanNumerals[currentPage]} / ${romanNumerals[pages.length - 1]}`;
+
+            // Scroll container to top smoothly on page change
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < pages.length - 1) {
+                currentPage++;
+                updatePages();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePages();
+            }
+        });
+
+        // --- GLOBAL BACKGROUND ANIMATION (Lush & Filled) ---
+        const canvas = document.getElementById('petal-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { 
+            width = canvas.width = window.innerWidth; 
+            height = canvas.height = window.innerHeight; 
+        });
+
+        const flowerSize = 32; 
+        const offscreenCanvas = document.createElement('canvas'); 
+        offscreenCanvas.width = flowerSize; 
+        offscreenCanvas.height = flowerSize;
+        const oCtx = offscreenCanvas.getContext('2d'); 
+        oCtx.font = `${flowerSize * 0.7}px serif`; 
+        oCtx.textAlign = 'center'; 
+        oCtx.textBaseline = 'middle'; 
+        oCtx.fillText('🌸', flowerSize / 2, flowerSize / 2);
+
+        const flowers = [];
+        class Flower {
+            constructor() { 
+                this.reset(); 
+                this.y = Math.random() * height; 
+            }
+            reset() { 
+                this.x = Math.random() * width; 
+                this.y = Math.random() * -height - 20; 
+                this.scale = Math.random() * 0.5 + 0.4; 
+                this.vs = Math.random() * 0.6 + 0.4; // Soft gentle fall
+                this.hs = Math.random() * 0.8 - 0.4; 
+                this.spin = Math.random() * 0.02; 
+                this.angle = Math.random() * Math.PI * 2; 
+                this.opacity = Math.random() * 0.6 + 0.15; 
+            }
+            draw() { 
+                ctx.save(); 
+                ctx.translate(this.x, this.y); 
+                ctx.rotate(this.angle); 
+                ctx.globalAlpha = this.opacity; 
+                const d = flowerSize * this.scale; 
+                ctx.drawImage(offscreenCanvas, -d / 2, -d / 2, d, d); 
+                ctx.restore(); 
+            }
+            update() { 
+                this.y += this.vs; 
+                this.x += this.hs + Math.sin(this.y / 60) * 0.4; 
+                this.angle += this.spin; 
+                if (this.y > height + 20) this.reset(); 
+            }
+        }
+        // Increased petal count for a more "filled" romantic look
+        for (let i = 0; i < 45; i++) flowers.push(new Flower());
+        function animate() { 
+            ctx.clearRect(0, 0, width, height); 
+            flowers.forEach(f => { f.update(); f.draw(); }); 
+            requestAnimationFrame(animate); 
+        }
+        animate();
+    </script>
+</body>
+</html>

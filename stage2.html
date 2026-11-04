@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>For Anushka - The Gauntlet (Stage 2)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-top: #ffe5ec; --bg-bottom: #fff0f3;
+            --text-dark: #3d2226; --text-muted: #8a5761;
+            --accent-rose: #ffb3c1;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --shadow-soft: 0 12px 40px rgba(229, 179, 190, 0.4);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 16px;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            color: var(--text-dark); font-family: 'Inter', sans-serif;
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        #petal-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+        .glass-panel {
+            width: 100%; max-width: 420px; max-height: 95vh;
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 32px;
+            box-shadow: var(--shadow-soft); padding: 24px 20px;
+            position: relative; z-index: 10; display: flex; flex-direction: column;
+            animation: float-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes float-in { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        h1 { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.6rem; text-align: center; margin: 0 0 8px 0; }
+        .subtitle { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+
+        .grid-container { display: flex; justify-content: center; width: 100%; touch-action: none; margin-bottom: 16px;}
+        .wordsearch-grid {
+            display: grid; grid-template-columns: repeat(12, 1fr);
+            width: 100%; max-width: 340px; gap: 3px;
+            background: rgba(255, 255, 255, 0.4); padding: 6px; border-radius: 16px;
+        }
+        .cell {
+            background: rgba(255, 255, 255, 0.8); aspect-ratio: 1 / 1;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 0.85rem; font-weight: 700; border-radius: 6px;
+            transition: all 0.1s ease; cursor: crosshair; position: relative;
+        }
+        .cell.selecting { background: var(--accent-rose); color: #fff; transform: scale(1.15); box-shadow: 0 4px 10px rgba(255, 179, 193, 0.6); z-index: 5; }
+        
+        @keyframes pop-found {
+            0% { transform: scale(1); background: rgba(255,255,255,0.8); color: var(--text-dark); }
+            50% { transform: scale(1.2); background: var(--accent-rose); box-shadow: 0 0 15px var(--accent-rose); color: #fff; z-index: 5; }
+            100% { transform: scale(1); background: var(--accent-rose); color: #fff; z-index: 1; }
+        }
+        .cell.found { animation: pop-found 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        .word-list { 
+            display: flex; flex-direction: column; gap: 8px; 
+            flex: 1; overflow-y: auto; padding-right: 4px;
+        }
+        .word-list::-webkit-scrollbar { width: 4px; }
+        .word-list::-webkit-scrollbar-thumb { background: var(--accent-rose); border-radius: 10px; }
+        
+        .word-item { font-size: 0.85rem; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 10px; transition: all 0.4s ease; }
+        .word-item strong { color: var(--text-dark); display: block; font-size: 0.9rem;}
+        .word-item .clue { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .word-item.crossed { background: rgba(255, 255, 255, 0.2); transform: scale(0.98); }
+        .word-item.crossed strong, .word-item.crossed .clue { opacity: 0.4; text-decoration: line-through; }
+
+        .status-msg { text-align: center; font-size: 0.85rem; font-weight: 500; margin-top: 10px; padding: 10px; border-radius: 12px; opacity: 0; transition: opacity 0.3s; }
+        .status-msg.show { opacity: 1; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+    <canvas id="petal-canvas"></canvas>
+
+    <div class="glass-panel">
+        <h1>II. Hidden Details</h1>
+        <p class="subtitle">Swipe to find the missing pieces of us.</p>
+        
+        <div class="grid-container">
+            <div class="wordsearch-grid" id="grid"></div>
+        </div>
+        
+        <div class="word-list" id="wordList"></div>
+        <div id="status-msg" class="status-msg"></div>
+    </div>
+
+    <script>
+        const puzzleData = [
+            { word: "ANUSHKA", clue: "My fave person" },
+            { word: "NOVEMBER", clue: "My fave month" },
+            { word: "AQUARIUM", clue: "Our first 'official' date" },
+            { word: "SALMON", clue: "My fave food you cook" },
+            { word: "EVERYTHING", clue: "My fave part about you" },
+            { word: "FOREVER", clue: "I'll be with you" },
+            { word: "WHEREVER", clue: "I'll settle __ you are" }
+        ];
+
+        const staticGrid = [
+            ['X','W','P','T','Y','U','I','O','S','D','F','A'],
+            ['E','Q','L','K','J','H','G','F','D','S','A','Q'],
+            ['V','Z','N','O','V','E','M','B','E','R','X','U'],
+            ['E','C','B','N','M','Q','W','E','R','T','F','A'],
+            ['R','P','O','I','U','Y','T','R','E','W','O','R'],
+            ['Y','A','S','D','F','G','H','J','K','L','R','I'],
+            ['T','W','H','E','R','E','V','E','R','B','E','U'],
+            ['H','Z','X','C','V','B','N','M','K','L','V','M'],
+            ['I','Q','W','E','R','T','Y','U','I','O','E','P'],
+            ['N','A','B','S','A','L','M','O','N','C','R','T'],
+            ['G','S','D','F','G','H','J','K','L','M','N','B'],
+            ['Z','X','C','V','A','N','U','S','H','K','A','Q']
+        ];
+
+        const wordLocations = [
+            { word: "EVERYTHING", cells: ["1-0","2-0","3-0","4-0","5-0","6-0","7-0","8-0","9-0","10-0"] },
+            { word: "NOVEMBER",  cells: ["2-2","2-3","2-4","2-5","2-6","2-7","2-8","2-9"] },
+            { word: "WHEREVER",  cells: ["6-1","6-2","6-3","6-4","6-5","6-6","6-7","6-8"] },
+            { word: "SALMON",    cells: ["9-3","9-4","9-5","9-6","9-7","9-8"] },
+            { word: "FOREVER",   cells: ["3-10","4-10","5-10","6-10","7-10","8-10","9-10"] },
+            { word: "AQUARIUM",  cells: ["0-11","1-11","2-11","3-11","4-11","5-11","6-11","7-11"] },
+            { word: "ANUSHKA",   cells: ["11-4","11-5","11-6","11-7","11-8","11-9","11-10"] }
+        ];
+
+        let foundWords = []; let isSelecting = false; let startCell = null; let selectedCells = [];
+        const wordListContainer = document.getElementById("wordList");
+
+        puzzleData.forEach((item) => {
+            const div = document.createElement("div"); div.className = "word-item"; div.id = `word-${item.word}`;
+            div.innerHTML = `<strong>???</strong> <span class="clue">${item.clue}</span>`;
+            wordListContainer.appendChild(div);
+        });
+
+        const gridElement = document.getElementById("grid");
+        for (let r = 0; r < 12; r++) {
+            for (let c = 0; c < 12; c++) {
+                const cell = document.createElement("div"); cell.className = "cell";
+                cell.textContent = staticGrid[r][c]; cell.dataset.row = r; cell.dataset.col = c;
+                cell.addEventListener("mousedown", startSelection);
+                cell.addEventListener("mouseenter", updateSelection);
+                cell.addEventListener("mouseup", endSelection);
+                gridElement.appendChild(cell);
+            }
+        }
+
+        gridElement.addEventListener("touchstart", (e) => {
+            const touch = e.touches[0]; const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains("cell")) startSelection({ target: element });
+        });
+        gridElement.addEventListener("touchmove", (e) => {
+            const touch = e.touches[0]; const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains("cell")) updateSelection({ target: element });
+            e.preventDefault();
+        }, { passive: false });
+        gridElement.addEventListener("touchend", endSelection);
+
+        function startSelection(e) { isSelecting = true; startCell = e.target; highlightCell(startCell); }
+        function updateSelection(e) {
+            if (!isSelecting) return; clearCurrentSelection();
+            const endCell = e.target;
+            const r1 = parseInt(startCell.dataset.row), c1 = parseInt(startCell.dataset.col);
+            const r2 = parseInt(endCell.dataset.row), c2 = parseInt(endCell.dataset.col);
+            const dR = r2 - r1, dC = c2 - c1;
+            if (r1 === r2 || c1 === c2 || Math.abs(dR) === Math.abs(dC)) {
+                const steps = Math.max(Math.abs(dR), Math.abs(dC));
+                const stepR = dR === 0 ? 0 : dR / steps; const stepC = dC === 0 ? 0 : dC / steps;
+                for (let i = 0; i <= steps; i++) {
+                    const cell = document.querySelector(`[data-row='${r1 + (stepR * i)}'][data-col='${c1 + (stepC * i)}']`);
+                    if (cell) highlightCell(cell);
+                }
+            }
+        }
+        function endSelection() {
+            if (!isSelecting) return; isSelecting = false;
+            const selectedWord = selectedCells.map(cell => cell.textContent).join("");
+            const reversedWord = selectedWord.split("").reverse().join("");
+            let matched = wordLocations.find(loc => (loc.word === selectedWord || loc.word === reversedWord) && loc.cells.every(coord => selectedCells.some(cell => `${cell.dataset.row}-${cell.dataset.col}` === coord)));
+
+            if (matched && !foundWords.includes(matched.word)) {
+                foundWords.push(matched.word);
+                selectedCells.forEach((cell, index) => { setTimeout(() => { cell.classList.add("found"); }, index * 60); });
+                const wordItem = document.getElementById(`word-${matched.word}`);
+                if (wordItem) {
+                    setTimeout(() => {
+                        wordItem.classList.add("crossed");
+                        wordItem.innerHTML = `<strong>✓ ${matched.word}</strong> <span class="clue">${puzzleData.find(p => p.word === matched.word).clue}</span>`;
+                    }, selectedCells.length * 60);
+                }
+                if (foundWords.length === puzzleData.length) {
+                    setTimeout(() => {
+                        const msg = document.getElementById('status-msg');
+                        msg.textContent = 'Perfect! Unlocking final stage...'; msg.className = 'status-msg show success';
+                        setTimeout(() => window.location.href = "stage3.html", 1500);
+                    }, selectedCells.length * 60 + 200);
+                }
+            }
+            clearCurrentSelection();
+        }
+
+        function highlightCell(cell) { cell.classList.add("selecting"); if (!selectedCells.includes(cell)) selectedCells.push(cell); }
+        function clearCurrentSelection() { document.querySelectorAll(".cell.selecting").forEach(c => c.classList.remove("selecting")); selectedCells = []; }
+        
+        window.addEventListener("mouseup", () => { isSelecting = false; clearCurrentSelection(); });
+        window.addEventListener("touchend", () => { isSelecting = false; clearCurrentSelection(); });
+
+        // --- GLOBAL BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('petal-canvas'); const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth; let height = canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+
+        const flowerSize = 32; const offscreenCanvas = document.createElement('canvas'); offscreenCanvas.width = flowerSize; offscreenCanvas.height = flowerSize;
+        const oCtx = offscreenCanvas.getContext('2d'); oCtx.font = `${flowerSize - 6}px serif`; oCtx.textAlign = 'center'; oCtx.textBaseline = 'middle'; oCtx.fillText('🌸', flowerSize / 2, flowerSize / 2);
+
+        const flowers = [];
+        class Flower {
+            constructor() { this.reset(); this.y = Math.random() * height; }
+            reset() { this.x = Math.random() * width; this.y = Math.random() * -height - 20; this.scale = Math.random() * 0.4 + 0.5; this.vs = Math.random() * 0.8 + 0.4; this.hs = Math.random() * 0.6 - 0.3; this.spin = Math.random() * 0.03; this.angle = Math.random() * Math.PI * 2; this.opacity = Math.random() * 0.4 + 0.3; }
+            draw() { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.globalAlpha = this.opacity; const d = flowerSize * this.scale; ctx.drawImage(offscreenCanvas, -d / 2, -d / 2, d, d); ctx.restore(); }
+            update() { this.y += this.vs; this.x += this.hs + Math.sin(this.y / 60) * 0.4; this.angle += this.spin; if (this.y > height + 20) this.reset(); }
+        }
+        for (let i = 0; i < 20; i++) flowers.push(new Flower());
+        function animate() { ctx.clearRect(0, 0, width, height); flowers.forEach(f => { f.update(); f.draw(); }); requestAnimationFrame(animate); }
+        animate();
+    </script>
+</body>
+</html>
